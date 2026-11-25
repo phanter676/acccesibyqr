@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccesibiQR - Personal</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+    <a class="skip-link" href="#contenido-principal">Ir al contenido principal</a>
+    <main class="container" id="contenido-principal">
+        <div class="header">
+            <h1>AccesibiQR</h1>
+            <p>Panel del personal</p>
+        </div>
+
+        <nav class="page-nav staff-nav" aria-label="Navegación de ventanillas">
+            <a href="/panel">Panel principal</a>
+            <label for="selector-ventanilla">Cambiar de ventanilla</label>
+            <select id="selector-ventanilla" aria-describedby="selector-estado">
+                <option value="">Cargando ventanillas...</option>
+            </select>
+            <a id="link-vista-cliente" href="#" target="_blank" rel="noopener">Vista del cliente</a>
+            <span id="selector-estado" class="visually-hidden" role="status" aria-live="polite"></span>
+        </nav>
+
+        <div id="alerta-negocio" class="alert-banner" role="alert">
+            <span id="alerta-texto"></span>
+            <button id="btn-atender" type="button" class="btn btn-green">✅ Atender</button>
+        </div>
+
+        <div class="card qr-card" id="qr-container">
+            <span class="badge" id="estado" role="status" aria-live="polite">⏳ Conectando...</span>
+            <h2 id="titulo-ventanilla">Ventanilla</h2>
+            <p>Este código QR es fijo: se puede imprimir y pegar en la ventanilla.</p>
+            <img id="qr" alt="Código QR de esta ventanilla" width="232" height="232"
+                style="background:#fff; padding:16px; border-radius:12px;">
+            <p class="qr-caption">Para probar, abre la vista del cliente en otra pestaña:</p>
+            <a id="link-demo" href="#" target="_blank" rel="noopener" class="btn btn-outline demo-link">Abrir
+                vista Cliente</a>
+        </div>
+
+        <div class="card">
+            <label for="informacion-negocio"><strong>Información para lectura por voz</strong> (menú, servicios o
+                indicaciones):</label>
+            <textarea id="informacion-negocio" rows="5"
+                placeholder="Escribe aquí la información que quieres ofrecer a tus clientes."></textarea>
+        </div>
+
+        <div class="card hidden" id="panel-chat">
+            <h3>🟢 Cliente conectado en vivo <span id="cola-info"></span></h3>
+            <div class="chat-box" id="chat" role="log" aria-live="polite" aria-label="Conversación con el cliente">
+            </div>
+            <label class="voice-checkbox">
+                <input type="checkbox" id="leer-voz"> Leer en voz alta los mensajes del cliente
+            </label>
+            <button id="btn-hablar" class="btn btn-yellow">🎤 Presiona para HABLAR al cliente</button>
+            <div class="staff-actions">
+                <button id="btn-finalizar" type="button" class="btn btn-green">🏁 Finalizar atención y
+                    llamar al siguiente</button>
+                <input type="text" id="input-mensaje" aria-label="Respuesta del personal"
+                    placeholder="O escribe una respuesta aquí...">
+                <button id="btn-enviar" type="button" class="btn btn-blue">Enviar</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/personal.js"></script>
+</body>
+
+</html>

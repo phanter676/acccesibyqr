@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccesibiQR - Atención</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+    <a class="skip-link" href="#contenido-principal">Ir al contenido principal</a>
+    <main class="container" id="contenido-principal">
+        <div class="header">
+            <h1>AccesibiQR</h1>
+            <p>Asistente personal de accesibilidad</p>
+        </div>
+
+        <div class="status-wrapper">
+            <span class="badge" id="estado" role="status" aria-live="polite">⏳ Conectando...</span>
+        </div>
+
+        <div id="menu-accesibilidad" class="card">
+            <h2>¿Cómo podemos ayudarte hoy?</h2>
+            <p>Selecciona tu preferencia de atención:</p>
+            <button type="button" onclick="seleccionarModo('auditiva')" class="btn btn-yellow">🦻 No escucho / Prefiero texto en
+                vivo</button>
+            <button type="button" onclick="seleccionarModo('visual')" class="btn btn-blue">👁️ Baja visión / Lectura por voz</button>
+            <button type="button" onclick="seleccionarModo('fisica')" class="btn btn-green">♿ Necesito rampa o asistencia
+                física</button>
+        </div>
+
+        <div id="cliente-auditiva" class="card hidden">
+            <h3>Chat en vivo con el personal</h3>
+            <div class="chat-box" id="chat" role="log" aria-live="polite" aria-label="Conversación con el comercio">
+            </div>
+            <div class="quick-actions">
+                <button type="button" onclick="enviarChat('Hola, necesito realizar un trámite')" class="btn btn-outline">👋 Realizar trámite</button>
+                <button type="button" onclick="enviarChat('Por favor, hable más despacio')" class="btn btn-outline">🐢 Hable más despacio</button>
+                <button type="button" onclick="enviarChat('¿Dónde está el baño accesible?')" class="btn btn-outline">🚻 Baño accesible</button>
+            </div>
+            <input type="text" id="input-mensaje" aria-label="Mensaje para el comercio"
+                placeholder="Escribe aquí (el cajero lo escuchará en voz alta)...">
+            <button type="button" onclick="enviarEscrito()" class="btn btn-yellow">Enviar y leer en voz alta al cajero</button>
+        </div>
+
+        <div id="cliente-visual" class="card hidden">
+            <h2>Modo asistencia por voz activado</h2>
+            <p id="informacion-voz" aria-live="polite">Solicitando información del local...</p>
+            <button onclick="leerTexto($('informacion-voz').innerText)" class="btn btn-blue">🔊 Leer o repetir la
+                información del local</button>
+            <button onclick="pedirAyuda('Cliente con discapacidad visual solicita que un asesor se acerque')"
+                class="btn btn-yellow">🙋‍♂️ Solicitar que un asesor se acerque</button>
+        </div>
+
+        <div id="cliente-fisica" class="card hidden">
+            <h2>Solicitar asistencia</h2>
+            <label for="ubicacion-cliente">Indica dónde estás (por ejemplo, entrada o mesa 4):</label>
+            <input type="text" id="ubicacion-cliente" autocomplete="off" placeholder="Tu ubicación dentro del local">
+            <button onclick="enviarSolicitudAsistencia()" class="btn btn-green">Enviar solicitud de asistencia</button>
+        </div>
+
+        <div id="cliente-confirmacion" class="card hidden centered">
+            <h2 class="success-text">✅ ¡Alerta enviada!</h2>
+            <p class="large-message">Tu solicitud se envió al local. El personal se acercará en un momento.</p>
+        </div>
+
+        <div id="cliente-espera" class="card hidden centered">
+            <h2>⏳ Estás en la fila</h2>
+            <p id="texto-espera" class="large-message" aria-live="polite"></p>
+        </div>
+
+        <div id="cliente-fin" class="card hidden centered">
+            <h2 class="success-text">✅ Atención finalizada</h2>
+            <p class="large-message">Gracias por usar AccesibiQR.</p>
+        </div>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/cliente.js"></script>
+</body>
+
+</html>

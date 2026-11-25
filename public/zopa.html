@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AccesibiQR - Calculadora de presupuesto y ZOPA</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --secondary: #2563eb;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --green: #16a34a;
+      --green-bg: #dcfce7;
+      --yellow: #ca8a04;
+      --yellow-bg: #fef9c3;
+      --red: #dc2626;
+      --red-bg: #fee2e2;
+    }
+
+    * { box-sizing: border-box; font-family: "Segoe UI", system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.5; }
+    .container { max-width: 1040px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    header h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    header p { margin: 0; opacity: 0.95; }
+    .grid { display: grid; grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.2fr); gap: 20px; }
+    .card {
+      min-width: 0;
+      background: var(--card);
+      padding: 22px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .card h2 {
+      margin: 0 0 18px;
+      font-size: 1.15rem;
+      color: var(--primary);
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 10px;
+    }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.92rem; }
+    small { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 4px; }
+    input, select {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      font-size: 1rem;
+    }
+    input:focus-visible, select:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+    .alert-box { padding: 16px; border-radius: 10px; margin-bottom: 18px; border-left: 6px solid; }
+    .status-green { background: var(--green-bg); border-color: var(--green); color: #14532d; }
+    .status-yellow { background: var(--yellow-bg); border-color: var(--yellow); color: #713f12; }
+    .status-red { background: var(--red-bg); border-color: var(--red); color: #7f1d1d; }
+    .alert-title { display: block; font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; }
+    .plan-badge {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .plan-detail { margin: 4px 0 16px; color: #334155; font-size: 0.93rem; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .metric { min-width: 0; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .metric-label { font-size: 0.78rem; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+    .metric-value { font-size: 1.35rem; font-weight: 700; color: var(--primary); margin-top: 4px; overflow-wrap: anywhere; }
+    .projection-note { margin: -6px 0 14px; color: var(--muted); font-size: 0.85rem; }
+    .hidden { display: none; }
+    @media (max-width: 760px) {
+      body { padding: 12px; }
+      .grid { grid-template-columns: 1fr; }
+      .card { padding: 18px; }
+    }
+    @media (max-width: 420px) {
+      .metrics-grid { grid-template-columns: 1fr; }
+      header { padding: 20px; }
+      header h1 { font-size: 1.35rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>AccesibiQR — Calculadora de presupuesto</h1>
+      <p>Evalúa la oferta del cliente, encuentra el plan que corresponde y estima cuándo recuperarás tu inversión.</p>
+    </header>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="datos-title">
+        <h2 id="datos-title">1. Datos de la negociación</h2>
+
+        <div class="form-group">
+          <label for="ventanillas">Ventanillas o puntos de atención</label>
+          <input type="number" id="ventanillas" value="2" min="1" max="50" step="1" inputmode="numeric">
+          <small>Básico: hasta 2 puntos · Negocio: 2–5 · Institucional: más de 6. Para 6 puntos, confirma una cotización a medida.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="ofertaMensual">¿Cuánto ofrece el cliente al mes? (S/)</label>
+          <input type="number" id="ofertaMensual" value="20" min="0" step="1" inputmode="decimal">
+          <small>Una oferta de S/ 20 no alcanza para un plan pagado; puede servir para iniciar la conversación de un piloto.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="ofertaSetup">¿Cuánto ofrece por la instalación? (S/)</label>
+          <input type="number" id="ofertaSetup" value="100" min="0" step="1" inputmode="decimal">
+          <small>Compara su oferta con la instalación del plan elegido. El costo estimado de cada placa es editable abajo.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="planProyeccion">Plan que proyectas vender</label>
+          <select id="planProyeccion">
+            <option value="auto">Automático según puntos</option>
+            <option value="basico">Plan Básico — S/ 70/mes</option>
+            <option value="negocio">Plan Negocio — S/ 150/mes</option>
+            <option value="institucional">Plan Institucional — desde S/ 400/mes</option>
+          </select>
+          <small>A 2 puntos puedes elegir Básico o Negocio; el automático elige el plan de menor precio que cubre esa capacidad.</small>
+        </div>
+
+        <div id="institucionalConfig" class="hidden">
+          <div class="form-group">
+            <label for="precioInstitucional">Mensualidad institucional cotizada (S/)</label>
+            <input type="number" id="precioInstitucional" value="400" min="400" step="10" inputmode="decimal">
+          </div>
+          <div class="form-group">
+            <label for="instalacionInstitucional">Instalación institucional cotizada (S/)</label>
+            <input type="number" id="instalacionInstitucional" value="0" min="0" step="10" inputmode="decimal">
+            <small>La instalación institucional no tiene precio fijo; ingresa tu cotización para estimar el retorno.</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="clientesPorMes">Clientes nuevos que sí cierran este plan cada mes</label>
+          <input type="number" id="clientesPorMes" value="4" min="1" max="100" step="1" inputmode="numeric">
+          <small>No cuentes aquí a quien solo acepta el piloto o se queda ofreciendo S/ 20.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="costoPlaca">Costo real por placa física (S/)</label>
+          <input type="number" id="costoPlaca" value="40" min="0" step="1" inputmode="decimal">
+        </div>
+
+        <div class="form-group">
+          <label for="costoServidor">Costo mensual de servidor/operación usado en el cálculo (S/)</label>
+          <input type="number" id="costoServidor" value="80" min="0" step="1" inputmode="decimal">
+        </div>
+
+        <div class="form-group">
+          <label for="inversionObjetivo">Inversión que quieres recuperar</label>
+          <select id="inversionObjetivo">
+            <option value="3048">S/ 3,048 — efectivo (monto por confirmar)</option>
+            <option value="8048">S/ 8,048 — efectivo + trabajo valorizado (por confirmar)</option>
+          </select>
+          <small>En el proyecto no encontré el desglose para verificar estos montos; confirma que sean los definitivos.</small>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="resultado-title">
+        <h2 id="resultado-title">2. Diagnóstico y recuperación por plan</h2>
+
+        <div id="zopaAlert" class="alert-box status-yellow" role="status" aria-live="polite">
+          <span id="zopaTitle" class="alert-title"></span>
+          <span id="zopaDesc"></span>
+        </div>
+
+        <div>
+          <span id="planSugeridoBadge" class="plan-badge"></span>
+          <p id="planDetalle" class="plan-detail"></p>
+        </div>
+
+        <p class="projection-note">El semáforo evalúa la oferta actual. La recuperación proyecta clientes nuevos que pagan el precio del plan elegido; supone que se mantienen activos y descuenta los costos configurados. Si este cliente se queda en S/ 20, no aporta ingresos de suscripción. El cálculo tampoco incluye ingresos ni el sticker de S/ 3 de los pilotos gratuitos.</p>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-label">Costo de placas del plan</div>
+            <div id="costoPlacas" class="metric-value"></div>
+            <small id="balanceSetup"></small>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Flujo neto estimado del mes 1</div>
+            <div id="gananciaMes1" class="metric-value"></div>
+            <small>Ventas del mes − placas − costo mensual de operación.</small>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Recuperación estimada</div>
+            <div id="mesesRecuperacion" class="metric-value"></div>
+            <small id="clientesNecesarios"></small>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Ingreso recurrente en el mes 6</div>
+            <div id="ingresoMes6" class="metric-value"></div>
+            <small>Suscripciones activas; no incluye instalaciones.</small>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const PRECIO_PISO_MENSUAL = 70;
+
+    function moneda(cantidad) {
+      return `S/ ${cantidad.toLocaleString("es-PE", { maximumFractionDigits: 2 })}`;
+    }
+
+    function obtenerPlan(ventanillas, seleccion, precioInstitucional, instalacionInstitucional) {
+      let tipo = seleccion;
+      if (tipo === "auto") {
+        tipo = ventanillas <= 2 ? "basico" : ventanillas <= 5 ? "negocio" : "institucional";
+      }
+
+      if (tipo === "basico") {
+        return {
+          tipo,
+          nombre: "Plan Básico",
+          precio: 70,
+          instalacion: 100,
+          placas: 2,
+          capacidad: "Hasta 2 puntos",
+          compatible: ventanillas <= 2,
+          cotizacionEspecial: false
+        };
+      }
+      if (tipo === "negocio") {
+        return {
+          tipo,
+          nombre: "Plan Negocio",
+          precio: 150,
+          instalacion: 200,
+          placas: Math.min(ventanillas, 5),
+          capacidad: "De 2 a 5 puntos",
+          compatible: ventanillas >= 2 && ventanillas <= 5,
+          cotizacionEspecial: false
+        };
+      }
+      return {
+        tipo: "institucional",
+        nombre: "Plan Institucional",
+        precio: Math.max(400, precioInstitucional),
+        instalacion: instalacionInstitucional,
+        placas: ventanillas,
+        capacidad: "Más de 6 puntos",
+        compatible: ventanillas >= 6,
+        cotizacionEspecial: ventanillas === 6
+      };
+    }
+
+    function calcular() {
+      const ventanillas = Math.min(50, Math.max(1, Math.floor(Number(document.getElementById("ventanillas").value) || 1)));
+      const ofertaMensual = Math.max(0, Number(document.getElementById("ofertaMensual").value) || 0);
+      const ofertaSetup = Math.max(0, Number(document.getElementById("ofertaSetup").value) || 0);
+      const clientesPorMes = Math.min(100, Math.max(1, Math.floor(Number(document.getElementById("clientesPorMes").value) || 1)));
+      const metaInversion = Number(document.getElementById("inversionObjetivo").value) || 3048;
+      const costoPorPlaca = Math.max(0, Number(document.getElementById("costoPlaca").value) || 0);
+      const costoServidorMensual = Math.max(0, Number(document.getElementById("costoServidor").value) || 0);
+      const seleccionPlan = document.getElementById("planProyeccion").value;
+      const precioInstitucional = Math.max(400, Number(document.getElementById("precioInstitucional").value) || 400);
+      const instalacionInstitucional = Math.max(0, Number(document.getElementById("instalacionInstitucional").value) || 0);
+      const plan = obtenerPlan(ventanillas, seleccionPlan, precioInstitucional, instalacionInstitucional);
+      const costoPlacas = plan.placas * costoPorPlaca;
+      const saldoInstalacion = ofertaSetup - plan.instalacion;
+      const alerta = document.getElementById("zopaAlert");
+      const titulo = document.getElementById("zopaTitle");
+      const descripcion = document.getElementById("zopaDesc");
+      document.getElementById("institucionalConfig").classList.toggle("hidden", plan.tipo !== "institucional");
+      alerta.className = "alert-box";
+
+      if (!plan.compatible) {
+        alerta.classList.add("status-yellow");
+        titulo.textContent = "⚠️ El plan seleccionado no cubre estos puntos";
+        descripcion.textContent = `${plan.nombre} admite ${plan.capacidad.toLowerCase()}; cambia el plan o ajusta la cantidad de puntos antes de cotizar.`;
+      } else if (ofertaMensual < 50) {
+        alerta.classList.add("status-red");
+        titulo.textContent = "⛔ FUERA DE LA ZOPA — oferta de alto riesgo";
+        descripcion.textContent = `S/ ${ofertaMensual}/mes no alcanza para un plan pagado. Ofrece el Piloto gratis por 30 días (instalación S/ 0 y solo sticker QR); después negocia ${plan.nombre} desde ${moneda(plan.precio)}/mes. Si se queda en S/ ${ofertaMensual}, este cliente no genera ingresos recurrentes para recuperar la inversión.`;
+      } else if (ofertaMensual < PRECIO_PISO_MENSUAL) {
+        alerta.classList.add("status-yellow");
+        titulo.textContent = "⚠️ ZOPA AJUSTADA — requiere condiciones";
+        descripcion.textContent = `S/ ${ofertaMensual}/mes está por debajo del precio mínimo de un plan pagado (S/ 70). No lo proyectes como ingreso recurrente: negocia el precio del plan o empieza con el piloto.`;
+      } else if (ofertaMensual < plan.precio || saldoInstalacion < 0 || plan.cotizacionEspecial) {
+        alerta.classList.add("status-yellow");
+        titulo.textContent = plan.cotizacionEspecial ? "⚠️ ZOPA AJUSTADA — cotización especial pendiente" : "⚠️ ZOPA AJUSTADA — falta negociar";
+        const faltantes = [];
+        if (ofertaMensual < plan.precio) {
+          faltantes.push(`S/ ${ofertaMensual}/mes no alcanza la tarifa de ${plan.nombre} (${moneda(plan.precio)}/mes)`);
+        }
+        if (saldoInstalacion < 0) {
+          faltantes.push(`la instalación ofrecida queda ${moneda(Math.abs(saldoInstalacion))} por debajo de la tarifa configurada`);
+        }
+        if (plan.cotizacionEspecial) {
+          faltantes.push("tus precios indican más de 6 puntos; confirma una tarifa e instalación a medida para 6");
+        }
+        descripcion.textContent = `${faltantes.join(". ")}.`;
+      } else {
+        alerta.classList.add("status-green");
+        titulo.textContent = "✅ DENTRO DE LA ZOPA — propuesta rentable";
+        descripcion.textContent = `La oferta alcanza la mensualidad y la instalación de ${plan.nombre} para ${ventanillas} punto(s).`;
+      }
+
+      document.getElementById("planSugeridoBadge").textContent =
+        `Plan para proyectar: ${plan.nombre}${plan.cotizacionEspecial ? " (cotización especial)" : ""}`;
+      document.getElementById("planDetalle").textContent =
+        `${plan.capacidad}: ${moneda(plan.precio)}/mes + ${moneda(plan.instalacion)} de instalación. ` +
+        `${plan.placas} placa(s) presupuestada(s) a ${moneda(costoPorPlaca)} cada una.`;
+
+      document.getElementById("costoPlacas").textContent = moneda(costoPlacas);
+      const saldoElemento = document.getElementById("balanceSetup");
+      saldoElemento.textContent = saldoInstalacion >= 0
+        ? `La oferta de instalación supera la tarifa del plan por ${moneda(saldoInstalacion)}`
+        : `Faltan ${moneda(Math.abs(saldoInstalacion))} frente a la tarifa de instalación`;
+      saldoElemento.style.color = saldoInstalacion >= 0 ? "#16a34a" : "#dc2626";
+
+      let mesRecuperacion = null;
+      if (plan.compatible) {
+        let cajaAcumulada = 0;
+        let clientesActivos = 0;
+        for (let mes = 1; mes <= 120; mes += 1) {
+          clientesActivos += clientesPorMes;
+          const margenInstalaciones = clientesPorMes * (plan.instalacion - costoPlacas);
+          const ingresoRecurrente = clientesActivos * plan.precio;
+          cajaAcumulada += margenInstalaciones + ingresoRecurrente - costoServidorMensual;
+          if (cajaAcumulada >= metaInversion) {
+            mesRecuperacion = mes;
+            break;
+          }
+        }
+      }
+
+      document.getElementById("gananciaMes1").textContent = plan.compatible
+        ? moneda(clientesPorMes * (plan.precio + plan.instalacion - costoPlacas) - costoServidorMensual)
+        : "No disponible";
+      document.getElementById("mesesRecuperacion").textContent =
+        !plan.compatible
+          ? "Elige un plan compatible"
+          : mesRecuperacion === null
+            ? "Más de 120 meses"
+            : `${mesRecuperacion} ${mesRecuperacion === 1 ? "mes" : "meses"}`;
+      document.getElementById("clientesNecesarios").textContent =
+        !plan.compatible
+          ? "No se proyecta hasta corregir la capacidad."
+          : mesRecuperacion === null
+            ? "Con estos supuestos no se recupera la inversión en 10 años."
+            : `Aproximadamente ${mesRecuperacion * clientesPorMes} clientes acumulados.`;
+      document.getElementById("ingresoMes6").textContent =
+        plan.compatible ? moneda(clientesPorMes * 6 * plan.precio) : "No disponible";
+    }
+
+    ["ventanillas", "ofertaMensual", "ofertaSetup", "planProyeccion", "clientesPorMes", "costoPlaca", "costoServidor", "inversionObjetivo", "precioInstitucional", "instalacionInstitucional"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", calcular);
+      document.getElementById(id).addEventListener("change", calcular);
+    });
+    calcular();
+  </script>
+</body>
+</html>

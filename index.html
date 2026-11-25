@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AccesibiQR - Atención Inclusiva en Vivo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>AccesibiQR</h1>
+    <p id="subtitulo">Sistema de Atención Inclusiva en Tiempo Real</p>
+  </div>
+
+  <!-- VISTA 1: PANEL DEL NEGOCIO -->
+  <div id="vista-negocio" class="hidden">
+    <div id="alerta-negocio" class="alert-banner"></div>
+
+    <div class="card" id="qr-container" style="text-align: center;">
+      <span class="badge" id="estado-conexion" role="status" aria-live="polite">⏳ Generando sala en vivo...</span>
+      <h2>Ventanilla 1 - Lista para atender</h2>
+      <p>Escanea este código QR con la cámara de tu celular:</p>
+      <div id="qrcode"></div>
+      <p style="font-size: 0.85rem; color: #94a3b8;">O abre la vista del cliente en otra pestaña para probar:</p>
+      <a id="link-demo" href="#" target="_blank" class="btn btn-outline" style="text-decoration: none;">Abrir vista Cliente en otra pestaña</a>
+    </div>
+
+    <div class="card">
+      <label for="informacion-negocio"><strong>Información para lectura por voz</strong> (menú, servicios o indicaciones):</label>
+      <textarea id="informacion-negocio" rows="5" style="width: 100%; margin-top: 10px; padding: 12px; font: inherit;" placeholder="Escribe aquí la información que quieres ofrecer a tus clientes."></textarea>
+    </div>
+
+    <div class="card hidden" id="panel-chat-negocio">
+      <h3>🟢 Cliente Conectado en Vivo</h3>
+      <div class="chat-box" id="chat-negocio" role="log" aria-live="polite" aria-label="Conversación con el cliente"></div>
+      <button id="btn-hablar" class="btn btn-yellow">🎤 Presiona para HABLAR al cliente</button>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="input-negocio" aria-label="Respuesta del comercio" placeholder="O escribe una respuesta aquí...">
+        <button onclick="enviarMensaje('negocio')" class="btn btn-blue" style="width: 120px; margin: 0;">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA 2: CELULAR DEL CLIENTE -->
+  <div id="vista-cliente" class="hidden">
+    <div style="text-align: center; margin-bottom: 10px;">
+      <span class="badge" id="estado-cliente" role="status" aria-live="polite">⏳ Conectando con Ventanilla 1...</span>
+    </div>
+
+    <div id="menu-accesibilidad" class="card">
+      <h2>¿Cómo podemos ayudarte hoy?</h2>
+      <p>Selecciona tu preferencia de atención:</p>
+      <button onclick="seleccionarModo('auditiva')" class="btn btn-yellow">🦻 No escucho / Prefiero texto en vivo</button>
+      <button onclick="seleccionarModo('visual')" class="btn btn-blue">👁️ Baja visión / Lectura por voz</button>
+      <button onclick="seleccionarModo('fisica')" class="btn btn-green">♿ Necesito rampa o asistencia física</button>
+    </div>
+
+    <div id="cliente-auditiva" class="card hidden">
+      <h3>Chat en Vivo con Ventanilla 1</h3>
+      <div class="chat-box" id="chat-cliente" role="log" aria-live="polite" aria-label="Conversación con el comercio"></div>
+      <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px;">
+        <button onclick="enviarRapido('Hola, necesito realizar un trámite')" class="btn btn-outline" style="padding: 8px; font-size: 0.9rem;">👋 Realizar trámite</button>
+        <button onclick="enviarRapido('Por favor, hable más despacio')" class="btn btn-outline" style="padding: 8px; font-size: 0.9rem;">🐢 Hable más despacio</button>
+        <button onclick="enviarRapido('¿Dónde está el baño accesible?')" class="btn btn-outline" style="padding: 8px; font-size: 0.9rem;">🚻 Baño accesible</button>
+      </div>
+      <input type="text" id="input-cliente" aria-label="Mensaje para el comercio" placeholder="Escribe aquí (el cajero lo escuchará en voz alta)...">
+      <button onclick="enviarMensaje('cliente')" class="btn btn-yellow">Enviar y leer en voz alta al cajero</button>
+    </div>
+
+    <div id="cliente-visual" class="card hidden">
+      <h2>Modo Asistencia por Voz Activado</h2>
+      <p id="informacion-voz" aria-live="polite">Solicitando información del local...</p>
+      <button onclick="leerTexto(document.getElementById('informacion-voz').innerText)" class="btn btn-blue">🔊 Leer o repetir la información del local</button>
+      <button onclick="pedirAyudaFisica('Cliente con discapacidad visual solicita guía en Ventanilla 1')" class="btn btn-yellow">🙋‍♂️ Solicitar que un asesor se acerque</button>
+    </div>
+
+    <div id="cliente-fisica" class="card hidden">
+      <h2>Solicitar asistencia</h2>
+      <label for="ubicacion-cliente">Indica dónde estás (por ejemplo, entrada o mesa 4):</label>
+      <input type="text" id="ubicacion-cliente" autocomplete="off" placeholder="Tu ubicación dentro del local">
+      <button onclick="enviarSolicitudAsistencia()" class="btn btn-green">Enviar solicitud de asistencia</button>
+    </div>
+
+    <div id="cliente-confirmacion" class="card hidden" style="text-align: center;">
+      <h2 style="color: var(--success);">✅ ¡Alerta Enviada!</h2>
+      <p style="font-size: 1.3rem;">Tu solicitud se envió al local. Si necesitas confirmación, utiliza el chat o vuelve a solicitar ayuda.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('sala');
+
+    if (!roomId) {
+      iniciarNegocio();
+    } else {
+      iniciarCliente(roomId);
+    }
+  });
+
+  let conn = null;
+  let peer = null;
+
+  function iniciarNegocio() {
+    // Mostramos la interfaz inmediatamente sin esperar a PeerJS
+    document.getElementById('vista-negocio').classList.remove('hidden');
+    document.getElementById('subtitulo').innerText = "Panel de Control del Comercio / Ventanilla";
+
+    if (typeof QRCode === 'undefined' || typeof Peer === 'undefined') {
+      actualizarEstado('⚠️ No se pudieron cargar las bibliotecas. Revisa tu conexión a internet.', false);
+      return;
+    }
+
+    const idSala = 'aq-' + Math.random().toString(36).substring(2, 10);
+    const baseUrl = window.location.href.split('?')[0];
+    const clientUrl = baseUrl + '?sala=' + idSala;
+
+    // Generamos el QR al instante
+    new QRCode(document.getElementById("qrcode"), { text: clientUrl, width: 200, height: 200 });
+    document.getElementById('link-demo').href = clientUrl;
+
+    // Conectamos a PeerJS
+    peer = new Peer(idSala);
+    peer.on('open', () => {
+      const badge = document.getElementById('estado-conexion');
+      badge.innerText = "● En línea - Esperando cliente";
+      badge.classList.add('badge-ok');
+    });
+
+    peer.on('error', (err) => {
+      actualizarEstado("⚠️ Error de conexión: " + err.type, false);
+    });
+
+    peer.on('connection', (connection) => {
+      conn = connection;
+      conn.on('close', () => {
+        document.getElementById('panel-chat-negocio').classList.add('hidden');
+        document.getElementById('qr-container').classList.remove('hidden');
+        actualizarEstado('Cliente desconectado. Esperando una nueva conexión.', false);
+      });
+      conn.on('error', () => actualizarEstado('⚠️ Se perdió la conexión con el cliente.', false));
+      document.getElementById('qr-container').classList.add('hidden');
+      document.getElementById('panel-chat-negocio').classList.remove('hidden');
+      configurarRecepcion('negocio');
+    });
+
+    // Reconocimiento de voz
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-PE';
+      const btnHablar = document.getElementById('btn-hablar');
+      
+      btnHablar.onclick = () => {
+        btnHablar.innerText = "🔴 Escuchando... habla ahora";
+        recognition.start();
+      };
+      recognition.onresult = (event) => {
+        const texto = event.results[0][0].transcript;
+        document.getElementById('input-negocio').value = texto;
+        enviarMensaje('negocio');
+        btnHablar.innerText = "🎤 Presiona para HABLAR al cliente";
+      };
+      recognition.onerror = () => { btnHablar.innerText = "🎤 Presiona para HABLAR al cliente"; };
+    }
+  }
+
+  function iniciarCliente(idSala) {
+    document.getElementById('vista-cliente').classList.remove('hidden');
+    document.getElementById('subtitulo').innerText = "Asistente Personal de Accesibilidad";
+    
+    if (typeof Peer === 'undefined') {
+      actualizarEstado('⚠️ No se pudo cargar la conexión. Revisa tu internet e inténtalo de nuevo.', false);
+      return;
+    }
+
+    peer = new Peer();
+    peer.on('open', () => {
+      conn = peer.connect(idSala);
+      conn.on('open', () => {
+        actualizarEstado('● Conectado con Ventanilla 1', true);
+      });
+      conn.on('error', () => actualizarEstado('⚠️ No se pudo conectar con la ventanilla.', false));
+      conn.on('close', () => actualizarEstado('Conexión cerrada. Vuelve a escanear el código QR.', false));
+      configurarRecepcion('cliente');
+    });
+    peer.on('error', (err) => actualizarEstado('⚠️ Error de conexión: ' + err.type, false));
+  }
+
+  function actualizarEstado(mensaje, conectado) {
+    ['estado-conexion', 'estado-cliente'].forEach((id) => {
+      const badge = document.getElementById(id);
+      if (!badge) return;
+      badge.innerText = mensaje;
+      badge.classList.toggle('badge-ok', conectado);
+    });
+  }
+
+  function enviarDatos(datos) {
+    if (!conn || !conn.open) {
+      actualizarEstado('⚠️ No hay conexión. No se envió el mensaje; vuelve a escanear el QR.', false);
+      return false;
+    }
+    conn.send(datos);
+    return true;
+  }
+
+  function seleccionarModo(modo) {
+document.getElementById('menu-accesibilidad').classList.add('hidden');
+if (modo === 'auditiva') {
+document.getElementById('cliente-auditiva').classList.remove('hidden');
+enviarDatos({ tipo: 'alerta', texto: '🦻 Cliente solicita atención por texto.' });
+} else if (modo === 'visual') {
+document.getElementById('cliente-visual').classList.remove('hidden');
+enviarDatos({ tipo: 'alerta', texto: '👁️ Cliente solicita asistencia visual.' });
+enviarDatos({ tipo: 'solicitar-informacion' });
+} else if (modo === 'fisica') {
+document.getElementById('cliente-fisica').classList.remove('hidden');
+document.getElementById('ubicacion-cliente').focus();
+}
+}
+function pedirAyudaFisica(mensaje) {
+if (!enviarDatos({ tipo: 'alerta', texto: mensaje })) return;
+document.getElementById('cliente-visual').classList.add('hidden');
+document.getElementById('cliente-confirmacion').classList.remove('hidden');
+leerTexto('Solicitud enviada al personal.');
+}
+function enviarSolicitudAsistencia() {
+const ubicacion = document.getElementById('ubicacion-cliente').value.trim();
+if (!ubicacion) {
+document.getElementById('ubicacion-cliente').focus();
+actualizarEstado('Indica dónde estás para que el personal pueda encontrarte.', false);
+return;
+}
+pedirAyudaFisica('♿ Cliente solicita rampa o asistencia física. Ubicación indicada: ' + ubicacion);
+if (conn && conn.open) {
+document.getElementById('cliente-fisica').classList.add('hidden');
+}
+}
+function enviarMensaje(emisor) {
+const input = document.getElementById('input-' + emisor);
+const texto = input.value.trim();
+if (!texto) return;
+if (!enviarDatos({ tipo: 'chat', emisor: emisor, texto: texto })) return;
+agregarBurbuja(emisor, texto, emisor);
+input.value = '';
+}
+function enviarRapido(texto) {
+if (!enviarDatos({ tipo: 'chat', emisor: 'cliente', texto: texto })) return;
+agregarBurbuja('cliente', texto, 'cliente');
+}
+function configurarRecepcion(miRol) {
+if (!conn) return;
+conn.on('data', (data) => {
+if (!data || typeof data !== 'object') return;
+if (data.tipo === 'solicitar-informacion' && miRol === 'negocio') {
+const info = document.getElementById('informacion-negocio').value.trim();
+conn.send({
+tipo: 'informacion',
+texto: info || 'El local todavía no ha publicado información. Solicita ayuda a un miembro del personal.'
+});
+} else if (data.tipo === 'informacion' && miRol === 'cliente') {
+const texto = typeof data.texto === 'string' ? data.texto : '';
+document.getElementById('informacion-voz').innerText = texto;
+leerTexto(texto);
+}
+if (data.tipo === 'alerta' && miRol === 'negocio') {
+const banner = document.getElementById('alerta-negocio');
+banner.style.display = 'block';
+banner.innerText = data.texto;
+leerTexto(data.texto);
+} else if (data.tipo === 'chat') {
+agregarBurbuja(miRol, data.texto, data.emisor);
+if (miRol === 'negocio' && data.emisor === 'cliente') {
+leerTexto("El cliente dice: " + data.texto);
+}
+}
+});
+}
+function agregarBurbuja(miRol, texto, emisor) {
+const chatBox = document.getElementById('chat-' + miRol);
+const div = document.createElement('div');
+div.className = 'msg ' + (emisor === 'negocio' ? 'msg-negocio' : 'msg-cliente');
+div.innerText = (emisor === 'negocio' ? '🏢 Cajero: ' : '👤 Cliente: ') + texto;
+chatBox.appendChild(div);
+chatBox.scrollTop = chatBox.scrollHeight;
+}
+function leerTexto(texto) {
+if ('speechSynthesis' in window) {
+const voz = new SpeechSynthesisUtterance(texto);
+voz.lang = 'es-ES';
+window.speechSynthesis.speak(voz);
+}
+}
+
+</script>
+</body>
+</html>
+

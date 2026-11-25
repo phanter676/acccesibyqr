@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AccesibiQR - Panel</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#contenido-principal">Ir al contenido principal</a>
+<main class="container" id="contenido-principal">
+  <div class="header">
+    <h1>AccesibiQR</h1>
+    <p>Panel de atenciones</p>
+  </div>
+
+  <nav class="page-nav" aria-label="Navegación del panel">
+    <a href="#estadisticas">Estadísticas</a>
+    <a href="#historial-titulo">Historial</a>
+    <a href="#ventanillas-titulo">Ventanillas y QR</a>
+  </nav>
+
+  <section class="card" id="estadisticas" aria-labelledby="estadisticas-titulo">
+    <h2 id="estadisticas-titulo">Solicitudes de atención</h2>
+    <p class="stats-total" id="total" aria-live="polite">0</p>
+    <p>solicitudes desde que se encendió el servidor</p>
+    <p>🦻 Texto en vivo: <strong id="auditiva">0</strong></p>
+    <p>👁️ Asistencia visual: <strong id="visual">0</strong></p>
+    <p>♿ Asistencia física: <strong id="fisica">0</strong></p>
+    <p>✅ Atendidas por el personal: <strong id="atendidas">0</strong></p>
+    <p>🏁 Atenciones finalizadas: <strong id="finalizadas">0</strong></p>
+    <p id="panel-error" class="panel-error" role="alert" hidden></p>
+  </section>
+
+  <section class="card" aria-labelledby="historial-titulo">
+    <h2 id="historial-titulo">Historial reciente</h2>
+    <p id="historial-error" class="panel-error" role="alert" hidden></p>
+    <div class="history-filters">
+      <label for="limite-historial">Mostrar</label>
+      <select id="limite-historial">
+        <option value="20">20 registros</option>
+        <option value="50">50 registros</option>
+        <option value="100" selected>100 registros</option>
+      </select>
+    </div>
+    <div id="lista-historial" role="log" aria-live="polite"></div>
+  </section>
+
+  <section class="card" aria-labelledby="ventanillas-titulo">
+    <h2 id="ventanillas-titulo">Administrar ventanillas y códigos QR</h2>
+    <form id="form-ventanilla" class="counter-form">
+      <label for="nombre-ventanilla">Nombre de la nueva ventanilla</label>
+      <input id="nombre-ventanilla" name="nombre" type="text" maxlength="60" required
+        placeholder="Por ejemplo, Caja 4">
+      <button class="btn btn-blue" type="submit">Crear ventanilla y QR</button>
+    </form>
+    <p id="ventanillas-mensaje" role="status" aria-live="polite"></p>
+    <p id="ventanillas-error" class="panel-error" role="alert" hidden></p>
+    <div id="lista-ventanillas" class="counter-list" aria-live="polite"></div>
+  </section>
+</main>
+
+<script src="/js/panel.js"></script>
+</body>
+</html>
